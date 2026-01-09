@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <title>班级排座位系统</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <!-- 顶部工具栏 -->
+        <header class="header">
+            <div class="header-left">
+                <h1 class="title">📚 班级排座位</h1>
+                <input type="text" id="className" class="class-input" placeholder="输入班级名称" value="2024级1班">
+            </div>
+            <div class="header-right">
+                <button class="btn btn-primary" onclick="saveData()">💾 保存</button>
+                <button class="btn btn-success" onclick="printSeatMap()">🖨️ 打印</button>
+                <button class="btn btn-secondary" onclick="showSettings()">⚙️ 设置</button>
+            </div>
+        </header>
+
+        <!-- 主要内容区 -->
+        <div class="main-content">
+            <!-- 左侧面板：学生列表 -->
+            <aside class="sidebar">
+                <div class="sidebar-header">
+                    <h2>学生列表</h2>
+                    <button class="btn-add" onclick="addStudent()">➕ 添加</button>
+                </div>
+                <div class="student-list" id="studentList">
+                    <!-- 学生列表动态生成 -->
+                </div>
+                <div class="sidebar-actions">
+                    <button class="btn btn-full" onclick="importStudents()">📥 导入学生</button>
+                    <button class="btn btn-full btn-danger" onclick="clearAllStudents()">🗑️ 清空</button>
+                </div>
+            </aside>
+
+            <!-- 中间：座位显示区 -->
+            <main class="seat-area">
+                <div class="seat-container" id="seatContainer">
+                    <!-- 座位网格动态生成 -->
+                </div>
+                <div class="blackboard">🖊️ 讲台</div>
+            </main>
+
+            <!-- 右侧面板：操作工具 -->
+            <aside class="tools-panel">
+                <h2>排座工具</h2>
+                <div class="tool-group">
+                    <h3>快速排座</h3>
+                    <button class="btn btn-full" onclick="randomizeSeats()">🎲 随机排座</button>
+                    <button class="btn btn-full" onclick="sortByNumber()">🔢 按学号</button>
+                    <button class="btn btn-full" onclick="sortByName()">🔤 按姓名</button>
+                </div>
+
+                <div class="tool-group">
+                    <h3>分组排座</h3>
+                    <label>分组数量：<input type="number" id="groupCount" value="4" min="2" max="8"></label>
+                    <button class="btn btn-full" onclick="groupRandomize()">🎲 随机分组</button>
+                    <button class="btn btn-full" onclick="assignGroups()">📋 分组分配</button>
+                </div>
+
+                <div class="tool-group">
+                    <h3>座位设置</h3>
+                    <label>行数：<input type="number" id="rowsInput" value="6" min="1" max="10" onchange="updateSeatGrid()"></label>
+                    <label>列数：<input type="number" id="colsInput" value="8" min="1" max="10" onchange="updateSeatGrid()"></label>
+                    <button class="btn btn-full" onclick="resetGrid()">🔄 重置网格</button>
+                </div>
+
+                <div class="tool-group">
+                    <h3>特殊座位</h3>
+                    <button class="btn btn-full" onclick="markEmpty()">❌ 标记空座</button>
+                    <button class="btn btn-full" onclick="clearEmpty()">✅ 清除标记</button>
+                </div>
+            </aside>
+        </div>
+    </div>
+
+    <!-- 添加学生模态框 -->
+    <div class="modal" id="addStudentModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>添加学生</h2>
+                <button class="close-btn" onclick="closeModal('addStudentModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>学号</label>
+                    <input type="text" id="studentNumber" placeholder="例如：001">
+                </div>
+                <div class="form-group">
+                    <label>姓名</label>
+                    <input type="text" id="studentName" placeholder="输入学生姓名">
+                </div>
+                <div class="form-group">
+                    <label>性别</label>
+                    <select id="studentGender">
+                        <option value="boy">男生</option>
+                        <option value="girl">女生</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('addStudentModal')">取消</button>
+                <button class="btn btn-primary" onclick="confirmAddStudent()">确定</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 导入学生模态框 -->
+    <div class="modal" id="importModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>导入学生</h2>
+                <button class="close-btn" onclick="closeModal('importModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>每行一个学生，格式：学号 姓名 性别（选填）</label>
+                    <textarea id="importText" rows="10" placeholder="001 张三 男&#10;002 李四 女&#10;003 王五"></textarea>
+                </div>
+                <p class="hint">支持从Excel或文本文件中复制粘贴</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('importModal')">取消</button>
+                <button class="btn btn-primary" onclick="confirmImport()">导入</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 设置模态框 -->
+    <div class="modal" id="settingsModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>设置</h2>
+                <button class="close-btn" onclick="closeModal('settingsModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>班主任</label>
+                    <input type="text" id="teacherName" placeholder="输入班主任姓名">
+                </div>
+                <div class="form-group">
+                    <label>座位标签</label>
+                    <select id="seatLabel">
+                        <option value="number">学号</option>
+                        <option value="name">姓名</option>
+                        <option value="both">学号+姓名</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>性别标识</label>
+                    <select id="genderLabel">
+                        <option value="color">颜色区分</option>
+                        <option value="icon">图标区分</option>
+                        <option value="none">不区分</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('settingsModal')">取消</button>
+                <button class="btn btn-primary" onclick="saveSettings()">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 提示信息 -->
+    <div class="toast" id="toast"></div>
+
+    <script src="script.js"></script>
+</body>
+</html>
